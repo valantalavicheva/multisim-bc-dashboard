@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MultiSIM All Devices — Business Case Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f1b33; --muted:#9db0d0; --text:#e9f0ff; --accent:#7aa2ff; --accent2:#5eead4;
+      --border:rgba(255,255,255,.08);
+    }
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:linear-gradient(180deg,#070b14 0%, #0b1220 60%, #0b1220 100%); color:var(--text);}
+    header{padding:18px 22px; border-bottom:1px solid var(--border); position:sticky; top:0; backdrop-filter: blur(10px); background:rgba(11,18,32,.72);}
+    header h1{margin:0; font-size:16px; font-weight:650; letter-spacing:.2px;}
+    header .sub{margin-top:6px; color:var(--muted); font-size:12px;}
+
+    .wrap{max-width:1200px; margin:0 auto; padding:18px 14px 42px;}
+    .grid{display:grid; grid-template-columns: 360px 1fr; gap:14px; align-items:start;}
+    @media (max-width: 980px){ .grid{grid-template-columns: 1fr;} }
+
+    .card{background:rgba(15,27,51,.72); border:1px solid var(--border); border-radius:14px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.25);}
+    .card h2{margin:0 0 10px 0; font-size:13px; color:#dbe7ff; font-weight:650;}
+
+    .row{display:grid; grid-template-columns: 1fr 120px; gap:10px; margin:10px 0; align-items:center;}
+    .row label{font-size:12px; color:#dbe7ff; line-height:1.2;}
+    .row .val{font-size:12px; color:var(--muted); text-align:right;}
+    input[type=range]{width:100%;}
+    input[type=number]{width:100%; padding:8px 10px; border-radius:10px; border:1px solid var(--border); background:#0b142a; color:var(--text);}
+
+    .tabs{display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
+    .tab{padding:8px 10px; border-radius:12px; border:1px solid var(--border); background:#0b142a; color:var(--muted); font-size:12px; cursor:pointer; user-select:none;}
+    .tab.active{background:rgba(122,162,255,.18); color:var(--text); border-color:rgba(122,162,255,.35);}
+
+    .kpis{display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;}
+    @media (max-width: 980px){ .kpis{grid-template-columns: repeat(2, 1fr);} }
+    .kpi{padding:12px; border-radius:12px; border:1px solid var(--border); background:rgba(11,20,42,.8);}
+    .kpi .t{font-size:11px; color:var(--muted);}
+    .kpi .v{margin-top:6px; font-size:16px; font-weight:700;}
+
+    .note{font-size:12px; color:var(--muted); line-height:1.35;}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+
+    table{width:100%; border-collapse:collapse; font-size:12px;}
+    th, td{padding:8px 10px; border-bottom:1px solid var(--border);}
+    th{text-align:left; color:#dbe7ff; font-weight:650;}
+    td{color:var(--muted);}
+    td.num{color:var(--text); text-align:right; font-variant-numeric: tabular-nums;}
+
+    .foot{margin-top:10px; font-size:11px; color:var(--muted);}
+    a{color:var(--accent2); text-decoration:none;}
+    a:hover{text-decoration:underline;}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MultiSIM All Devices — Interactive Business Case Dashboard</h1>
+    <div class="sub">12-месечна проекция • сравнение на промо стратегии A vs B • интерактивни графики (hover)</div>
+  </header>
+
+  <div class="wrap">
+    <div class="grid">
+      <div class="card">
+        <h2>Контроли (Inputs)</h2>
+
+        <div class="row">
+          <label>Обща consumer база</label>
+          <div class="val"><span id="baseVal" class="mono"></span></div>
+        </div>
+        <input id="base" type="number" min="1" step="1000" value="1500000" />
+
+        <div class="row">
+          <label>Месечна такса (лв)</label>
+          <div class="val"><span id="mfVal" class="mono"></span></div>
+        </div>
+        <input id="mf" type="number" min="0" step="0.01" value="4.99" />
+
+        <div class="row">
+          <label>Активационна такса (лв)</label>
+          <div class="val"><span id="afVal" class="mono"></span></div>
+        </div>
+        <input id="af" type="number" min="0" step="0.01" value="14.99" />
+
+        <div class="row">
+          <label>Средно устройства / user (Avg SIMs per adopter)</label>
+          <div class="val"><span id="devicesVal" class="mono"></span></div>
+        </div>
+        <input id="devices" type="range" min="1.0" max="3.0" step="0.1" value="1.2" />
+
+        <div class="row">
+          <label>Таргет penetration (от базата)</label>
+          <div class="val"><span id="penVal" class="mono"></span></div>
+        </div>
+        <input id="pen" type="range" min="0" max="10" step="0.1" value="2.0" />
+
+        <div class="row">
+          <label>Дял activations с устройство (Scenario B)</label>
+          <div class="val"><span id="ratioVal" class="mono"></span></div>
+        </div>
+        <input id="ratioB" type="range" min="0" max="100" step="1" value="35" />
+
+        <div class="row">
+          <label>Месечен churn (на активните SIMs)</label>
+          <div class="val"><span id="churnVal" class="mono"></span></div>
+        </div>
+        <input id="churn" type="range" min="0.5" max="5.0" step="0.1" value="2.0" />
+
+        <div class="foot">
+          Assumption: 12-месечното penetration се достига линейно (equal new activations per month). Churn се прилага върху активната база месечно.
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="tabs">
+            <div class="tab active" data-tab="tab1">📈 Приходи</div>
+            <div class="tab" data-tab="tab2">💸 Промо ефект</div>
+            <div class="tab" data-tab="tab3">📊 Сравнение</div>
+            <div class="tab" data-tab="tab4">ℹ️ Notes</div>
+          </div>
+
+          <div id="tab1" class="tabpane">
+            <div class="kpis" style="margin-bottom:10px;">
+              <div class="kpi"><div class="t">Годишен приход (A) — Standard Promo</div><div class="v" id="kpiRevA"></div></div>
+              <div class="kpi"><div class="t">Годишен приход (B) — Device Focused</div><div class="v" id="kpiRevB"></div></div>
+              <div class="kpi"><div class="t">Общо activations (SIMs) — year</div><div class="v" id="kpiActs"></div></div>
+              <div class="kpi"><div class="t">Break-even месеци за Scenario B</div><div class="v" id="kpiBE"></div></div>
+            </div>
+            <div id="chartRevenue" style="height:420px;"></div>
+          </div>
+
+          <div id="tab2" class="tabpane" style="display:none;">
+            <div class="note" style="margin:6px 0 12px;">
+              “Foregone revenue” = стойност на безплатните месеци + (ако е приложимо) waived activation fee.
+              “Actual cash flow” = реално събраните приходи за 12 месеца.
+            </div>
+            <div id="chartPromo" style="height:420px;"></div>
+          </div>
+
+          <div id="tab3" class="tabpane" style="display:none;">
+            <div id="tableWrap"></div>
+          </div>
+
+          <div id="tab4" class="tabpane" style="display:none;">
+            <div class="note">
+              <b>Scenario A (Standard Promo):</b> activation fee се таксува, но има <span class="mono">1</span> месец free subscription.
+              <br/><br/>
+              <b>Scenario B (Device Focused):</b> <span class="mono">0</span> activation fee + <span class="mono">3</span> месеца free subscription.
+              <br/><br/>
+              <b>Важно:</b> Това е “cash-flow” модел (когато реално събираш пари), не счетоводно разпределение. За презентация е ок, защото показва impact-а на промото.
+              <br/><br/>
+              Ако искаш, мога да добавя:
+              <ul>
+                <li>еднократни разходи (IT, маркетинг)</li>
+                <li>VAT/NET vs GROSS switch</li>
+                <li>cannibalization downside (имаме го в Excel v3)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Quick Outputs</h2>
+          <div class="note" id="quickOutputs"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- Helpers
+  const fmtBGN = (x) => {
+    const v = (isFinite(x) ? x : 0);
+    return v.toLocaleString('bg-BG', {maximumFractionDigits: 0}) + ' лв';
+  };
+  const fmtNum = (x) => {
+    const v = (isFinite(x) ? x : 0);
+    return v.toLocaleString('bg-BG', {maximumFractionDigits: 0});
+  };
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+  // ---------- Model
+  // Cohort-style cashflow for free months: each month m, new activations create a cohort with freeMonths.
+  // Churn applied to active base each month (including cohorts).
+  function simulate(params){
+    const months = 12;
+    const base = params.base;
+    const mf = params.mf;
+    const af = params.af;
+    const avgDevices = params.avgDevices;
+    const pen = params.pen; // percent (0..10)
+    const ratioB = params.ratioB; // 0..1
+    const churn = params.churn; // 0..1 monthly
+
+    const totalAdopters = base * (pen/100);
+    const totalSIMs = totalAdopters * avgDevices;
+    const newSIMsPerMonth = totalSIMs / months;
+
+    // Split new sims into A and B
+    const newA = Array.from({length: months}, _ => newSIMsPerMonth * (1-ratioB));
+    const newB = Array.from({length: months}, _ => newSIMsPerMonth * ratioB);
+
+    const res = {
+      months: Array.from({length: months}, (_,i)=> i+1),
+      newA, newB,
+      activeA: [], activeB: [],
+      cashActA: [], cashActB: [],
+      cashSubA: [], cashSubB: [],
+      cashTotalA: [], cashTotalB: [],
+      cumA: [], cumB: [],
+      foregoneA: 0, foregoneB: 0,
+      totalCashA: 0, totalCashB: 0
+    };
+
+    // cohorts arrays: each cohort has remainingFreeMonths and size
+    let cohortsA = []; // free 1 month
+    let cohortsB = []; // free 3 months
+
+    let activeA = 0;
+    let activeB = 0;
+
+    let cumA = 0;
+    let cumB = 0;
+
+    for (let m=1; m<=months; m++){
+      // Add new cohorts
+      const addA = newA[m-1];
+      const addB = newB[m-1];
+      cohortsA.push({size: addA, free: 1});
+      cohortsB.push({size: addB, free: 3});
+
+      // Activation cash
+      const actCashA = addA * af;
+      const actCashB = addB * 0;
+
+      // Subscription cash: for each cohort, if free==0 => pays mf
+      let subCashA = 0;
+      let subCashB = 0;
+
+      // Apply churn to all active first (including cohorts) for realism
+      // We'll apply churn on cohort sizes (simpler) before charging subscription.
+      const churnFactor = (1 - churn);
+      cohortsA = cohortsA.map(c => ({...c, size: c.size * churnFactor}));
+      cohortsB = cohortsB.map(c => ({...c, size: c.size * churnFactor}));
+
+      // Charge subs and decrement free months (free months count down each month)
+      cohortsA = cohortsA.map(c => {
+        if (c.free <= 0) subCashA += c.size * mf;
+        return {...c, free: c.free - 1};
+      });
+      cohortsB = cohortsB.map(c => {
+        if (c.free <= 0) subCashB += c.size * mf;
+        return {...c, free: c.free - 1};
+      });
+
+      // Active base = sum of cohort sizes (after churn)
+      activeA = cohortsA.reduce((s,c)=>s+c.size,0);
+      activeB = cohortsB.reduce((s,c)=>s+c.size,0);
+
+      const totA = actCashA + subCashA;
+      const totB = actCashB + subCashB;
+
+      cumA += totA;
+      cumB += totB;
+
+      res.activeA.push(activeA);
+      res.activeB.push(activeB);
+      res.cashActA.push(actCashA);
+      res.cashActB.push(actCashB);
+      res.cashSubA.push(subCashA);
+      res.cashSubB.push(subCashB);
+      res.cashTotalA.push(totA);
+      res.cashTotalB.push(totB);
+      res.cumA.push(cumA);
+      res.cumB.push(cumB);
+    }
+
+    res.totalCashA = res.cashTotalA.reduce((a,b)=>a+b,0);
+    res.totalCashB = res.cashTotalB.reduce((a,b)=>a+b,0);
+
+    // Foregone revenue (promo investment)
+    // A: 1 free month per activation (subscription waived) + activation not waived
+    // B: 3 free months per activation + activation waived
+    const totalActsA = newA.reduce((a,b)=>a+b,0);
+    const totalActsB = newB.reduce((a,b)=>a+b,0);
+
+    res.foregoneA = totalActsA * (1*mf);
+    res.foregoneB = totalActsB * (3*mf + af);
+
+    // ARPU approximation: annual cash / average active base
+    const avgActiveA = res.activeA.reduce((a,b)=>a+b,0) / months;
+    const avgActiveB = res.activeB.reduce((a,b)=>a+b,0) / months;
+    res.arpuA = (avgActiveA>0) ? (res.totalCashA / avgActiveA) : 0;
+    res.arpuB = (avgActiveB>0) ? (res.totalCashB / avgActiveB) : 0;
+
+    res.totalActsA = totalActsA;
+    res.totalActsB = totalActsB;
+    res.totalActs = totalActsA + totalActsB;
+    res.totalSIMsTarget = totalSIMs;
+
+    // Break-even months for scenario B vs promo cost per activation
+    // How many paid months to cover promo cost: (3*mf + af) / mf
+    res.breakEvenMonthsB = (mf>0) ? (3 + af/mf) : Infinity;
+
+    return res;
+  }
+
+  // ---------- UI
+  const els = {
+    base: document.getElementById('base'),
+    mf: document.getElementById('mf'),
+    af: document.getElementById('af'),
+    devices: document.getElementById('devices'),
+    pen: document.getElementById('pen'),
+    ratioB: document.getElementById('ratioB'),
+    churn: document.getElementById('churn'),
+
+    baseVal: document.getElementById('baseVal'),
+    mfVal: document.getElementById('mfVal'),
+    afVal: document.getElementById('afVal'),
+    devicesVal: document.getElementById('devicesVal'),
+    penVal: document.getElementById('penVal'),
+    ratioVal: document.getElementById('ratioVal'),
+    churnVal: document.getElementById('churnVal'),
+
+    kpiRevA: document.getElementById('kpiRevA'),
+    kpiRevB: document.getElementById('kpiRevB'),
+    kpiActs: document.getElementById('kpiActs'),
+    kpiBE: document.getElementById('kpiBE'),
+
+    quickOutputs: document.getElementById('quickOutputs'),
+    tableWrap: document.getElementById('tableWrap')
+  };
+
+  function paramsFromUI(){
+    const base = clamp(parseFloat(els.base.value||1500000), 1, 1e9);
+    const mf = clamp(parseFloat(els.mf.value||4.99), 0, 1e6);
+    const af = clamp(parseFloat(els.af.value||14.99), 0, 1e6);
+    const avgDevices = clamp(parseFloat(els.devices.value||1.2), 1.0, 3.0);
+    const pen = clamp(parseFloat(els.pen.value||2.0), 0, 10);
+    const ratioB = clamp(parseFloat(els.ratioB.value||35), 0, 100) / 100;
+    const churn = clamp(parseFloat(els.churn.value||2.0), 0.5, 5.0) / 100;
+    return {base, mf, af, avgDevices, pen, ratioB, churn};
+  }
+
+  function refreshLabels(p){
+    els.baseVal.textContent = fmtNum(p.base);
+    els.mfVal.textContent = p.mf.toFixed(2) + ' лв';
+    els.afVal.textContent = p.af.toFixed(2) + ' лв';
+    els.devicesVal.textContent = p.avgDevices.toFixed(1);
+    els.penVal.textContent = p.pen.toFixed(1) + '%';
+    els.ratioVal.textContent = Math.round(p.ratioB*100) + '%';
+    els.churnVal.textContent = (p.churn*100).toFixed(1) + '%';
+  }
+
+  function render(res, p){
+    // KPIs
+    els.kpiRevA.textContent = fmtBGN(res.totalCashA);
+    els.kpiRevB.textContent = fmtBGN(res.totalCashB);
+    els.kpiActs.textContent = fmtNum(res.totalActs);
+    els.kpiBE.textContent = isFinite(res.breakEvenMonthsB) ? res.breakEvenMonthsB.toFixed(1) + ' м.' : '—';
+
+    // Revenue chart (cumulative)
+    const traceA = {x: res.months, y: res.cumA, type:'scatter', mode:'lines+markers', name:'Scenario A (Standard Promo)', line:{color:'#7aa2ff', width:3}};
+    const traceB = {x: res.months, y: res.cumB, type:'scatter', mode:'lines+markers', name:'Scenario B (Device Focused)', line:{color:'#5eead4', width:3}};
+    const layoutR = {
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      margin:{l:60,r:20,t:30,b:50},
+      xaxis:{title:'Месец', gridcolor:'rgba(255,255,255,.06)', zeroline:false},
+      yaxis:{title:'Кумулативни приходи (лв)', gridcolor:'rgba(255,255,255,.06)', zeroline:false, tickformat:','},
+      legend:{orientation:'h', x:0, y:1.15, font:{color:'#e9f0ff'}},
+      font:{color:'#e9f0ff'}
+    };
+    Plotly.react('chartRevenue', [traceA, traceB], layoutR, {displayModeBar:false, responsive:true});
+
+    // Promo impact chart (bar)
+    const bar = {
+      x: ['Scenario A', 'Scenario B'],
+      y: [res.foregoneA, res.foregoneB],
+      name: 'Foregone revenue (promo investment)',
+      type:'bar', marker:{color:'rgba(122,162,255,.55)'}
+    };
+    const bar2 = {
+      x: ['Scenario A', 'Scenario B'],
+      y: [res.totalCashA, res.totalCashB],
+      name: 'Actual cash flow (12m)',
+      type:'bar', marker:{color:'rgba(94,234,212,.55)'}
+    };
+    const layoutP = {
+      barmode:'group',
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      margin:{l:60,r:20,t:30,b:50},
+      xaxis:{title:'Сценарий', gridcolor:'rgba(255,255,255,.06)'},
+      yaxis:{title:'лв', gridcolor:'rgba(255,255,255,.06)', tickformat:','},
+      legend:{orientation:'h', x:0, y:1.15},
+      font:{color:'#e9f0ff'}
+    };
+    Plotly.react('chartPromo', [bar, bar2], layoutP, {displayModeBar:false, responsive:true});
+
+    // Comparison table
+    const rows = [
+      ['Total annual cash revenue (лв)', res.totalCashA, res.totalCashB],
+      ['Total activations (SIMs)', res.totalActsA, res.totalActsB],
+      ['ARPU (annual cash / avg active SIM) (лв)', res.arpuA, res.arpuB],
+      ['Foregone revenue (promo investment) (лв)', res.foregoneA, res.foregoneB],
+      ['Net (cash - promo investment) (лв)', res.totalCashA - res.foregoneA, res.totalCashB - res.foregoneB],
+    ];
+
+    let html = '<table><thead><tr><th>Метрика</th><th>Scenario A</th><th>Scenario B</th></tr></thead><tbody>';
+    for (const r of rows){
+      const a = r[1]; const b = r[2];
+      const isInt = (r[0].includes('activations'));
+      html += '<tr>';
+      html += `<td>${r[0]}</td>`;
+      html += `<td class="num">${isInt? fmtNum(a): (r[0].includes('(лв)')? fmtBGN(a): a.toFixed(2))}</td>`;
+      html += `<td class="num">${isInt? fmtNum(b): (r[0].includes('(лв)')? fmtBGN(b): b.toFixed(2))}</td>`;
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    els.tableWrap.innerHTML = html;
+
+    // Quick outputs
+    const adopters = p.base * (p.pen/100);
+    const totalSIMs = adopters * p.avgDevices;
+    const perMonth = totalSIMs / 12;
+    els.quickOutputs.innerHTML = `
+      <div>Target adopters: <span class="mono">${fmtNum(adopters)}</span> (от база ${fmtNum(p.base)})</div>
+      <div>Total secondary SIMs (year target): <span class="mono">${fmtNum(totalSIMs)}</span></div>
+      <div>Avg new SIMs / month: <span class="mono">${fmtNum(perMonth)}</span></div>
+      <div>Split: Scenario B = <span class="mono">${Math.round(p.ratioB*100)}%</span>, Scenario A = <span class="mono">${100-Math.round(p.ratioB*100)}%</span></div>
+      <div>Break-even for Scenario B promo (months): <span class="mono">${res.breakEvenMonthsB.toFixed(1)}</span> 
+        <span class="note">(formula: 3 + activation_fee / monthly_fee)</span></div>
+    `;
+  }
+
+  function update(){
+    const p = paramsFromUI();
+    refreshLabels(p);
+    const res = simulate(p);
+    render(res, p);
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      const id = t.dataset.tab;
+      document.querySelectorAll('.tabpane').forEach(p=>p.style.display='none');
+      document.getElementById(id).style.display = 'block';
+      // Ensure Plotly resizes
+      window.dispatchEvent(new Event('resize'));
+    });
+  });
+
+  // Bind
+  ['input','change'].forEach(ev => {
+    els.base.addEventListener(ev, update);
+    els.mf.addEventListener(ev, update);
+    els.af.addEventListener(ev, update);
+    els.devices.addEventListener(ev, update);
+    els.pen.addEventListener(ev, update);
+    els.ratioB.addEventListener(ev, update);
+    els.churn.addEventListener(ev, update);
+  });
+
+  update();
+</script>
+</body>
+</html>
