@@ -202,18 +202,18 @@ function render(r,p){
   Plotly.react('chartMetrics',[traceMA,traceMB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'лв',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
   
   // Monthly profit table
-  const monthlyProfitA=revA;
-  const monthlyProfitB=revB;
-  const cumulativeA=r.cumA;
-  const cumulativeB=r.cumB;
-  const activeBaseA=r.activeA;
-  const activeBaseB=r.activeB;
-  const takeRateA=newA.map(s=>(s/p.base*100).toFixed(2));
-  const takeRateB=newB.map(s=>(s/p.base*100).toFixed(2));
+  var monthlyProfitA=revA;
+  var monthlyProfitB=revB;
+  var cumulativeA=r.cumA;
+  var cumulativeB=r.cumB;
+  var activeBaseA=r.activeA;
+  var activeBaseB=r.activeB;
+  var takeRateA=r.newA.map(s=>(s/p.base*100).toFixed(2));
+  var takeRateB=r.newB.map(s=>(s/p.base*100).toFixed(2));
   
   // Monthly chart
-  const traceProfitA={x:r.months,y:monthlyProfitA,type:'scatter',mode:'lines+markers',name:'Profit A',line:{color:'#7aa2ff',width:2}};
-  const traceProfitB={x:r.months,y:monthlyProfitB,type:'scatter',mode:'lines+markers',name:'Profit B',line:{color:'#5eead4',width:2}};
+  var traceProfitA={x:r.months,y:monthlyProfitA,type:'scatter',mode:'lines+markers',name:'Profit A',line:{color:'#7aa2ff',width:2}};
+  var traceProfitB={x:r.months,y:monthlyProfitB,type:'scatter',mode:'lines+markers',name:'Profit B',line:{color:'#5eead4',width:2}};
   Plotly.react('chartMonthly',[traceProfitA,traceProfitB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'Profit (лв)',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
   
   let mHtml='<table><thead><tr><th>Metric</th>';
