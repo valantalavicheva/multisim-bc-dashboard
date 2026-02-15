@@ -201,32 +201,48 @@ function render(r,p){
   const traceMB={x:r.months,y:revB,type:'scatter',mode:'lines+markers',name:'Rev B',line:{color:'#5eead4',width:2}};
   Plotly.react('chartMetrics',[traceMA,traceMB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'лв',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
   
-  // Monthly profit table - single scenario
+  // Monthly profit table - no promo logic
   var takeRate = (p.pen * 100).toFixed(2);
   var churnPct = (p.churn * 100).toFixed(1);
   var totalSIMs = p.base * p.pen * p.avgDevices;
-  var monthlySIMs = totalSIMs / 12;
-  var revActivation = p.af * monthlySIMs;
-  var revSubscription = p.mf * totalSIMs * 0.5; // assume 50% on average
-  var monthlyProfit = revActivation + revSubscription;
+  var newSIMsPerMonth = totalSIMs / 12;
+  
+  // Calculate cumulative without promo
+  var cumulative = 0;
+  var cumData = [];
+  var activeData = [];
+  var currentBase = 0;
+  for(var m = 0; m < 12; m++) {
+    var newThisMonth = newSIMsPerMonth;
+    var churnThisMonth = currentBase * p.churn;
+    currentBase = currentBase - churnThisMonth + newThisMonth;
+    activeData.push(currentBase);
+    var revAct = newThisMonth * p.af;
+    var revSub = currentBase * p.mf;
+    var profit = revAct + revSub;
+    cumulative += profit;
+    cumData.push(cumulative);
+  }
   
   var mHtml = '<table><thead><tr><th>Metric</th>';
   for(var i = 1; i <= 12; i++) mHtml += '<th>' + i + '</th>';
   mHtml += '</tr></thead><tbody>';
-  mHtml += '<tr><td><b>Take Rate (%)</b></td>';
+  mHtml += '<tr><td><b>Consumer Base</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + fmtNum(p.base) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Take Rate (%)</b></td>';
   r.months.forEach(function() { mHtml += '<td class="num">' + takeRate + '</td>'; });
   mHtml += '</tr><tr><td><b>Churn (%)</b></td>';
   r.months.forEach(function() { mHtml += '<td class="num">' + churnPct + '</td>'; });
   mHtml += '</tr><tr><td>Active Base</td>';
-  r.activeA.forEach(function(v) { mHtml += '<td class="num">' + fmtNum(Math.round(v)) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Rev Activation</b></td>';
-  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(revActivation) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Rev Subscription</b></td>';
-  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(revSubscription) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Total Monthly Profit</b></td>';
-  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(monthlyProfit) + '</td>'; });
+  activeData.forEach(function(v) { mHtml += '<td class="num">' + fmtNum(Math.round(v)) + '</td>'; });
+  mHtml += '</tr><tr><td>Rev Activation</td>';
+  activeData.forEach(function(v, i) { var rev = newSIMsPerMonth * p.af; mHtml += '<td class="num">' + fmtBGN(rev) + '</td>'; });
+  mHtml += '</tr><tr><td>Rev Subscription</td>';
+  activeData.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v * p.mf) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Monthly Profit</b></td>';
+  activeData.forEach(function(v) { var profit = (newSIMsPerMonth * p.af) + (v * p.mf); mHtml += '<td class="num">' + fmtBGN(profit) + '</td>'; });
   mHtml += '</tr><tr><td><b>Cumulative</b></td>';
-  r.cumA.forEach(function(v, i) { mHtml += '<td class="num">' + fmtBGN(v + r.cumB[i]) + '</td>'; });
+  cumData.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
   mHtml += '</tr></tbody></table>';
   $('monthlyProfitTable').innerHTML = mHtml;
 
