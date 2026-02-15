@@ -116,7 +116,8 @@
             <div class="tab active" data-tab="tab1">📈 Приходи</div>
             <div class="tab" data-tab="tab2">💸 Промо ефект</div>
             <div class="tab" data-tab="tab3">📊 Сравнение</div>
-            <div class="tab" data-tab="tab4">ℹ️ Notes</div>
+            <div class="tab" data-tab="tab4">📋 Метрики</div>
+            <div class="tab" data-tab="tab5">ℹ️ Notes</div>
           </div>
 
           <div id="tab1" class="tabpane">
@@ -142,6 +143,14 @@
           </div>
 
           <div id="tab4" class="tabpane" style="display:none;">
+            <div class="note" style="margin:6px 0 12px;">
+              <b>Детайлни метрики</b> — повтаряемост, отлив, активации и приходи по месеци.
+            </div>
+            <div id="chartMetrics" style="height:320px;"></div>
+            <div id="metricsTableWrap" style="margin-top:14px;"></div>
+          </div>
+
+          <div id="tab5" class="tabpane" style="display:none;">
             <div class="note">
               <b>Scenario A (Standard Promo):</b> activation fee се таксува, но има <span class="mono">1</span> месец free subscription.
               <br/><br/>
@@ -431,6 +440,67 @@
       <div>Break-even for Scenario B promo (months): <span class="mono">${res.breakEvenMonthsB.toFixed(1)}</span> 
         <span class="note">(formula: 3 + activation_fee / monthly_fee)</span></div>
     `;
+
+    // ===== NEW: Metrics Tab (tab4) =====
+    // Calculate metrics by month
+    const repeatRate = p.ratioB * 100; // % of B scenario (repeat/upgrade rate proxy)
+    const churnPct = p.churn * 100;
+    
+    // Monthly activation revenue (A + B)
+    const actRevA = res.cashActA;
+    const actRevB = res.cashActB;
+    // Monthly subscription revenue (A + B)
+    const subRevA = res.cashSubA;
+    const subRevB = res.cashSubB;
+    // Total revenue per month
+    const totalRevA = res.cashTotalA;
+    const totalRevB = res.cashTotalB;
+    // Active base per month
+    const activeBaseA = res.activeA;
+    const activeBaseB = res.activeB;
+    
+    // Chart: Revenue breakdown by month
+    const traceActA = {x: res.months, y: actRevA, type:'scatter', mode:'lines+markers', name:'Activation Rev A', line:{color:'#f59e0b', width:2}};
+    const traceActB = {x: res.months, y: actRevB, type:'scatter', mode:'lines+markers', name:'Activation Rev B', line:{color:'#fbbf24', width:2}};
+    const traceSubA = {x: res.months, y: subRevA, type:'scatter', mode:'lines+markers', name:'Subscription Rev A', line:{color:'#3b82f6', width:2}};
+    const traceSubB = {x: res.months, y: subRevB, type:'scatter', mode:'lines+markers', name:'Subscription Rev B', line:{color:'#60a5fa', width:2}};
+    const layoutM = {
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      margin:{l:60,r:20,t:30,b:50},
+      xaxis:{title:'Месец', gridcolor:'rgba(255,255,255,.06)', zeroline:false},
+      yaxis:{title:'Приход (лв)', gridcolor:'rgba(255,255,255,.06)', zeroline:false, tickformat:','},
+      legend:{orientation:'h', x:0, y:1.15, font:{color:'#e9f0ff'}},
+      font:{color:'#e9f0ff'}
+    };
+    Plotly.react('chartMetrics', [traceActA, traceActB, traceSubA, traceSubB], layoutM, {displayModeBar:false, responsive:true});
+
+    // Metrics table
+    const totalActRevA = actRevA.reduce((a,b)=>a+b,0);
+    const totalActRevB = actRevB.reduce((a,b)=>a+b,0);
+    const totalSubRevA = subRevA.reduce((a,b)=>a+b,0);
+    const totalSubRevB = subRevB.reduce((a,b)=>a+b,0);
+    const avgActiveA = activeBaseA.reduce((a,b)=>a+b,0) / 12;
+    const avgActiveB = activeBaseB.reduce((a,b)=>a+b,0) / 12;
+    
+    const mRows = [
+      ['Repeat Rate (Scenario B)', repeatRate.toFixed(1) + '%', repeatRate.toFixed(1) + '%'],
+      ['Monthly Churn Rate', churnPct.toFixed(1) + '%', churnPct.toFixed(1) + '%'],
+      ['Avg Active Base (year)', fmtNum(Math.round(avgActiveA)), fmtNum(Math.round(avgActiveB))],
+      ['Total Activations (year)', fmtNum(Math.round(res.totalActsA)), fmtNum(Math.round(res.totalActsB))],
+      ['Revenue: Activation Fee (лв)', fmtBGN(totalActRevA), fmtBGN(totalActRevB)],
+      ['Revenue: Monthly Fee (лв)', fmtBGN(totalSubRevA), fmtBGN(totalSubRevB)],
+      ['Total Revenue (лв)', fmtBGN(res.totalCashA), fmtBGN(res.totalCashB)],
+      ['Foregone Revenue (Promo) (лв)', fmtBGN(res.foregoneA), fmtBGN(res.foregoneB)],
+      ['Net Revenue (лв)', fmtBGN(res.totalCashA - res.foregoneA), fmtBGN(res.totalCashB - res.foregoneB)],
+    ];
+    let mHtml = '<table><thead><tr><th>Метрика</th><th>Scenario A</th><th>Scenario B</th></tr></thead><tbody>';
+    for (const r of mRows){
+      mHtml += '<tr>';
+      mHtml += `<td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td>`;
+      mHtml += '</tr>';
+    }
+    mHtml += '</tbody></table>';
+    document.getElementById('metricsTableWrap').innerHTML = mHtml;
   }
 
   function update(){
