@@ -1,144 +1,133 @@
 <!doctype html>
 <html lang="bg">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MultiSIM All Devices — Business Case Dashboard</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MultiSIM Business Case</title>
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
   <style>
     :root{--bg:#0b1220;--panel:#0f1b33;--muted:#9db0d0;--text:#e9f0ff;--accent:#7aa2ff;--accent2:#5eead4;--border:rgba(255,255,255,.08);}
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,#070b14 0%,#0b1220 60%,#0b1220 100%);color:var(--text);}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,#070b14,#0b1220);color:var(--text);}
     header{padding:18px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;backdrop-filter:blur(10px);background:rgba(11,18,32,.72);}
-    header h1{margin:0;font-size:16px;font-weight:650;letter-spacing:.2px;}
+    header h1{margin:0;font-size:16px;font-weight:650;}
     header .sub{margin-top:6px;color:var(--muted);font-size:12px;}
     .wrap{max-width:1200px;margin:0 auto;padding:18px 14px 42px;}
     .grid{display:grid;grid-template-columns:360px 1fr;gap:14px;align-items:start;}
     @media(max-width:980px){.grid{grid-template-columns:1fr;}}
-    .card{background:rgba(15,27,51,.72);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+    .card{background:rgba(15,27,51,.72);border:1px solid var(--border);border-radius:14px;padding:14px;}
     .card h2{margin:0 0 10px 0;font-size:13px;color:#dbe7ff;font-weight:650;}
     .row{display:grid;grid-template-columns:1fr 120px;gap:10px;margin:10px 0;align-items:center;}
-    .row label{font-size:12px;color:#dbe7ff;line-height:1.2;}
+    .row label{font-size:12px;color:#dbe7ff;}
     .row .val{font-size:12px;color:var(--muted);text-align:right;}
     input[type=range]{width:100%;}
-    input[type=number]{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0b142a;color:var(--text);}
+    input[type=number]{width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);background:#0b142a;color:var(--text);}
     .tabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
-    .tab{padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#0b142a;color:var(--muted);font-size:12px;cursor:pointer;user-select:none;}
-    .tab.active{background:rgba(122,162,255,.18);color:var(--text);border-color:rgba(122,162,255,.35);}
-    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+    .tab{padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#0b142a;color:var(--muted);font-size:12px;cursor:pointer;}
+    .tab.active{background:rgba(122,162,255,.18);color:var(--text);}
+    .tabpane{display:none;}
+    .tabpane.active{display:block;}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
     @media(max-width:980px){.kpis{grid-template-columns:repeat(2,1fr);}}
     .kpi{padding:12px;border-radius:12px;border:1px solid var(--border);background:rgba(11,20,42,.8);}
     .kpi .t{font-size:11px;color:var(--muted);}
     .kpi .v{margin-top:6px;font-size:16px;font-weight:700;}
     .note{font-size:12px;color:var(--muted);line-height:1.35;}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .mono{font-family:monospace;}
     table{width:100%;border-collapse:collapse;font-size:11px;}
     th,td{padding:6px 8px;border-bottom:1px solid var(--border);}
-    th{text-align:left;color:#dbe7ff;font-weight:650;background:rgba(0,0,0,0.3);}
+    th{text-align:left;color:#dbe7ff;background:rgba(0,0,0,0.3);}
     td{color:var(--muted);}
-    td.num{color:var(--text);text-align:right;font-variant-numeric:tabular-nums;}
+    td.num{color:var(--text);text-align:right;}
     .foot{margin-top:10px;font-size:11px;color:var(--muted);}
-    a{color:var(--accent2);text-decoration:none;}
-    a:hover{text-decoration:underline;}
   </style>
 </head>
 <body>
   <header>
-    <h1>MultiSIM All Devices — Business Case Dashboard</h1>
-    <div class="sub">12-месечна проекция • сравнение на промо стратегии A vs B • интерактивни графики (hover)</div>
+    <h1>MultiSIM Business Case</h1>
+    <div class="sub">12-month projection • comparison</div>
   </header>
-
   <div class="wrap">
     <div class="grid">
       <div class="card">
-        <h2>Контроли (Inputs)</h2>
-        <div class="row"><label>Обща consumer база</label><div class="val"><span id="baseVal" class="mono"></span></div></div>
-        <input id="base" type="number" min="1" step="1000" value="1500000" />
-        <div class="row"><label>Месечна такса (лв)</label><div class="val"><span id="mfVal" class="mono"></span></div></div>
-        <input id="mf" type="number" min="0" step="0.01" value="4.99" />
-        <div class="row"><label>Активационна такса (лв)</label><div class="val"><span id="afVal" class="mono"></span></div></div>
-        <input id="af" type="number" min="0" step="0.01" value="14.99" />
-        <div class="row"><label>Средно устройства / user</label><div class="val"><span id="devicesVal" class="mono"></span></div></div>
-        <input id="devices" type="range" min="1.0" max="3.0" step="0.1" value="1.2" />
-        <div class="row"><label>Таргет penetration (%)</label><div class="val"><span id="penVal" class="mono"></span></div></div>
-        <input id="pen" type="range" min="0" max="10" step="0.1" value="2.0" />
-        <div class="row"><label>Дял Scenario B (%)</label><div class="val"><span id="ratioVal" class="mono"></span></div></div>
-        <input id="ratioB" type="range" min="0" max="100" step="1" value="35" />
-        <div class="row"><label>Месечен churn (%)</label><div class="val"><span id="churnVal" class="mono"></span></div></div>
-        <input id="churn" type="range" min="0.5" max="5.0" step="0.1" value="2.0" />
-        <div class="foot">Assumption: 12-месечното penetration се достига линейно. Churn се прилага върху активната база месечно.</div>
+        <h2>Inputs</h2>
+        <div class="row"><label>Consumer Base</label><div class="val"><span id="baseVal" class="mono"></span></div></div>
+        <input id="base" type="number" value="1500000">
+        <div class="row"><label>Monthly Fee (BGN)</label><div class="val"><span id="mfVal" class="mono"></span></div></div>
+        <input id="mf" type="number" value="4.99" step="0.01">
+        <div class="row"><label>Activation Fee (BGN)</label><div class="val"><span id="afVal" class="mono"></span></div></div>
+        <input id="af" type="number" value="14.99" step="0.01">
+        <div class="row"><label>Avg Devices/User</label><div class="val"><span id="devicesVal" class="mono"></span></div></div>
+        <input id="devices" type="range" min="1" max="3" step="0.1" value="1.2">
+        <div class="row"><label>Penetration (%)</label><div class="val"><span id="penVal" class="mono"></span></div></div>
+        <input id="pen" type="range" min="0" max="10" step="0.1" value="2">
+        <div class="row"><label>Scenario B (%)</label><div class="val"><span id="ratioVal" class="mono"></span></div></div>
+        <input id="ratioB" type="range" min="0" max="100" value="35">
+        <div class="row"><label>Churn (%)</label><div class="val"><span id="churnVal" class="mono"></span></div></div>
+        <input id="churn" type="range" min="0.5" max="5" step="0.1" value="2">
       </div>
-
       <div>
         <div class="card" style="margin-bottom:14px;">
           <div class="tabs">
-            <div class="tab active" data-tab="tab1">📈 Приходи</div>
-            <div class="tab" data-tab="tab2">💸 Промо</div>
-            <div class="tab" data-tab="tab3">📊 Сравнение</div>
-            <div class="tab" data-tab="tab4">📋 Метрики</div>
-            <div class="tab" data-tab="tab5">📊 Месечна печалба</div>
-            <div class="tab" data-tab="tab6">ℹ️ Notes</div>
+            <div class="tab active" data-tab="1">📈 Revenue</div>
+            <div class="tab" data-tab="2">💸 Promo</div>
+            <div class="tab" data-tab="3">📊 Compare</div>
+            <div class="tab" data-tab="4">📋 Metrics</div>
+            <div class="tab" data-tab="5">📊 Monthly</div>
+            <div class="tab" data-tab="6">ℹ️ Notes</div>
           </div>
-
-          <div id="tab1" class="tabpane">
-            <div class="kpis" style="margin-bottom:10px;">
-              <div class="kpi"><div class="t">Годишен приход A</div><div class="v" id="kpiRevA"></div></div>
-              <div class="kpi"><div class="t">Годишен приход B</div><div class="v" id="kpiRevB"></div></div>
-              <div class="kpi"><div class="t">Activations (год)</div><div class="v" id="kpiActs"></div></div>
-              <div class="kpi"><div class="t">Break-even (мес)</div><div class="v" id="kpiBE"></div></div>
+          <div id="pane1" class="tabpane active">
+            <div class="kpis">
+              <div class="kpi"><div class="t">Revenue A</div><div class="v" id="kpiRevA"></div></div>
+              <div class="kpi"><div class="t">Revenue B</div><div class="v" id="kpiRevB"></div></div>
+              <div class="kpi"><div class="t">Activations</div><div class="v" id="kpiActs"></div></div>
+              <div class="kpi"><div class="t">Break-even</div><div class="v" id="kpiBE"></div></div>
             </div>
-            <div id="chartRevenue" style="height:380px;"></div>
+            <div id="chartRevenue" style="height:350px;"></div>
           </div>
-
-          <div id="tab2" class="tabpane" style="display:none;">
-            <div class="note" style="margin:6px 0 12px;">Foregone = безплатни месеци + (за B) отказана активация. Actual = реален приход.</div>
-            <div id="chartPromo" style="height:380px;"></div>
+          <div id="pane2" class="tabpane">
+            <div class="note" style="margin:6px 0 12px;">Foregone = free months. Actual = real cash.</div>
+            <div id="chartPromo" style="height:350px;"></div>
           </div>
-
-          <div id="tab3" class="tabpane" style="display:none;"><div id="tableWrap"></div></div>
-
-          <div id="tab4" class="tabpane" style="display:none;">
-            <div class="note" style="margin:6px 0 12px;"><b>Детайлни метрики</b> — всичко по месеци</div>
-            <div id="chartMetrics" style="height:280px;"></div>
+          <div id="pane3" class="tabpane"><div id="tableWrap"></div></div>
+          <div id="pane4" class="tabpane">
+            <div class="note" style="margin:6px 0 12px;"><b>Metrics by month</b></div>
+            <div id="chartMetrics" style="height:250px;"></div>
             <div id="metricsTableWrap" style="margin-top:14px;"></div>
           </div>
-
-          <div id="tab5" class="tabpane" style="display:none;">
-            <div class="note" style="margin:6px 0 12px;"><b>Месечна печалба</b> — приходи и нетна печалба по месеци</div>
-            <div id="chartMonthly" style="height:280px;"></div>
+          <div id="pane5" class="tabpane">
+            <div class="note" style="margin:6px 0 12px;"><b>Monthly profit table</b></div>
+            <div id="chartMonthly" style="height:250px;"></div>
             <div id="monthlyProfitTable" style="margin-top:14px;overflow-x:auto;"></div>
           </div>
-
-          <div id="tab6" class="tabpane" style="display:none;">
+          <div id="pane6" class="tabpane">
             <div class="note">
-              <b>Scenario A:</b> 1 месец free, activation fee се плаща.<br/>
-              <b>Scenario B:</b> 3 месеца free, 0 activation fee.<br/><br/>
-              Това е cash-flow модел.
+              <b>Scenario A:</b> 1 month free, activation fee paid.<br>
+              <b>Scenario B:</b> 3 months free, 0 activation fee.
             </div>
           </div>
         </div>
-
-        <div class="card"><h2>Quick Outputs</h2><div class="note" id="quickOutputs"></div></div>
+        <div class="card"><h2>Summary</h2><div class="note" id="quickOutputs"></div></div>
       </div>
     </div>
   </div>
-
 <script>
-const fmtBGN=x=>(isFinite(x)?x:0).toLocaleString('bg-BG',{maximumFractionDigits:0})+' лв';
-const fmtNum=x=>(isFinite(x)?x:0).toLocaleString('bg-BG',{maximumFractionDigits:0});
-const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function fmtBGN(x){return(isFinite(x)?x:0).toLocaleString('bg-BG',{maximumFractionDigits:0})+' лв';}
+function fmtNum(x){return(isFinite(x)?x:0).toLocaleString('bg-BG',{maximumFractionDigits:0});}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
 
 function simulate(p){
   const m=12,base=p.base,mf=p.mf,af=p.af,avgD=p.avgDevices,pen=p.pen/100,ratioB=p.ratioB,churn=p.churn/100;
-  const totalAdopters=base*pen,totalSIMs=totalAdopters*avgD,newSIMs=totalSIMs/m;
-  const newA=Array.from({length:m},_=>newSIMs*(1-ratioB));
-  const newB=Array.from({length:m},_=>newSIMs*ratioB);
+  const totalAdopters=base*pen,totalSIMs=totalAdopters*avgD,newSIMsPerMonth=totalSIMs/m;
+  const newA=Array.from({length:m},_=>newSIMsPerMonth*(1-ratioB));
+  const newB=Array.from({length:m},_=>newSIMsPerMonth*ratioB);
   let cohortsA=[],cohortsB=[];
   let cumA=0,cumB=0;
   const res={months:Array.from({length:m},(_,i)=>i+1),newA,newB,activeA:[],activeB:[],cashTotalA:[],cashTotalB:[],cumA:[],cumB:[]};
-  
   for(let i=0;i<m;i++){
     cohortsA.push({size:newA[i],free:1});cohortsB.push({size:newB[i],free:3});
-    const cf=1-churn;cohortsA=c=>{c.size*=cf;return c;}(cohortsA.map(cf));cohortsB=cohortsB.map(cf);
+    const cf=1-churn;
+    cohortsA=cohortsA.map(c=>({size:c.size*cf,free:c.free}));
+    cohortsB=cohortsB.map(c=>({size:c.size*cf,free:c.free}));
     let subA=0,subB=0;
     cohortsA=cohortsA.map(c=>{if(c.free<=0)subA+=c.size*mf;return{...c,free:c.free-1}});
     cohortsB=cohortsB.map(c=>{if(c.free<=0)subB+=c.size*mf;return{...c,free:c.free-1}});
@@ -161,116 +150,121 @@ function simulate(p){
   return res;
 }
 
-const els={base:document.getElementById('base'),mf:document.getElementById('mf'),af:document.getElementById('af'),devices:document.getElementById('devices'),pen:document.getElementById('pen'),ratioB:document.getElementById('ratioB'),churn:document.getElementById('churn'),baseVal:document.getElementById('baseVal'),mfVal:document.getElementById('mfVal'),afVal:document.getElementById('afVal'),devicesVal:document.getElementById('devicesVal'),penVal:document.getElementById('penVal'),ratioVal:document.getElementById('ratioVal'),churnVal:document.getElementById('churnVal'),kpiRevA:document.getElementById('kpiRevA'),kpiRevB:document.getElementById('kpiRevB'),kpiActs:document.getElementById('kpiActs'),kpiBE:document.getElementById('kpiBE'),quickOutputs:document.getElementById('quickOutputs'),tableWrap:document.getElementById('tableWrap')};
-
+const $=(id)=>document.getElementById(id);
 function params(){
-  return{base:clamp(parseFloat(els.base.value||1500000),1,1e9),mf:clamp(parseFloat(els.mf.value||4.99),0,1e6),af:clamp(parseFloat(els.af.value||14.99),0,1e6),avgDevices:clamp(parseFloat(els.devices.value||1.2),1,3),pen:clamp(parseFloat(els.pen.value||2),0,10),ratioB:clamp(parseFloat(els.ratioB.value||35),0,100)/100,churn:clamp(parseFloat(els.churn.value||2),0.5,5)/100};
+  return{
+    base:clamp(parseFloat($('base').value)||1500000,1,1e9),
+    mf:clamp(parseFloat($('mf').value)||4.99,0,1e6),
+    af:clamp(parseFloat($('af').value)||14.99,0,1e6),
+    avgDevices:clamp(parseFloat($('devices').value)||1.2,1,3),
+    pen:clamp(parseFloat($('pen').value)||2,0,10),
+    ratioB:clamp(parseFloat($('ratioB').value)||35,0,100)/100,
+    churn:clamp(parseFloat($('churn').value)||2,0.5,5)/100
+  };
 }
-
-function refresh(){
-  const p=params();
-  els.baseVal.textContent=fmtNum(p.base);
-  els.mfVal.textContent=p.mf.toFixed(2)+' лв';
-  els.afVal.textContent=p.af.toFixed(2)+' лв';
-  els.devicesVal.textContent=p.avgDevices.toFixed(1);
-  els.penVal.textContent=p.pen.toFixed(1)+'%';
-  els.ratioVal.textContent=Math.round(p.ratioB*100)+'%';
-  els.churnVal.textContent=(p.churn*100).toFixed(1)+'%';
+function refreshLabels(p){
+  $('baseVal').textContent=fmtNum(p.base);
+  $('mfVal').textContent=p.mf.toFixed(2)+' лв';
+  $('afVal').textContent=p.af.toFixed(2)+' лв';
+  $('devicesVal').textContent=p.avgDevices.toFixed(1);
+  $('penVal').textContent=p.pen.toFixed(1)+'%';
+  $('ratioVal').textContent=Math.round(p.ratioB*100)+'%';
+  $('churnVal').textContent=(p.churn*100).toFixed(1)+'%';
 }
-
 function render(r,p){
-  els.kpiRevA.textContent=fmtBGN(r.totalCashA);
-  els.kpiRevB.textContent=fmtBGN(r.totalCashB);
-  els.kpiActs.textContent=fmtNum(r.totalActs);
-  els.kpiBE.textContent=isFinite(r.breakEvenMonthsB)?r.breakEvenMonthsB.toFixed(1)+' м.':'—';
-
+  $('kpiRevA').textContent=fmtBGN(r.totalCashA);
+  $('kpiRevB').textContent=fmtBGN(r.totalCashB);
+  $('kpiActs').textContent=fmtNum(r.totalActs);
+  $('kpiBE').textContent=isFinite(r.breakEvenMonthsB)?r.breakEvenMonthsB.toFixed(1)+' м':'—';
+  
+  // Revenue chart
   const traceA={x:r.months,y:r.cumA,type:'scatter',mode:'lines+markers',name:'Scenario A',line:{color:'#7aa2ff',width:3}};
   const traceB={x:r.months,y:r.cumB,type:'scatter',mode:'lines+markers',name:'Scenario B',line:{color:'#5eead4',width:3}};
-  Plotly.react('chartRevenue',[traceA,traceB],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',margin:{l:50,r:20,t:30,b:40},xaxis:{title:'Месец',gridcolor:'rgba(255,255,255,.06)'},yaxis:{title:'Приход (лв)',gridcolor:'rgba(255,255,255,.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.15},font:{color:'#e9f0ff'}},{displayModeBar:false});
-
-  const bar1={x:['A','B'],y:[r.foregoneA,r.foregoneB],name:'Foregone',type:'bar',marker:{color:'rgba(122,162,255,.55)'}};
-  const bar2={x:['A','B'],y:[r.totalCashA,r.totalCashB],name:'Actual',type:'bar',marker:{color:'rgba(94,234,212,.55)'}};
-  Plotly.react('chartPromo',[bar1,bar2],{barmode:'group',paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',margin:{l:50,r:20,t:30,b:40},xaxis:{title:'Сценарий',gridcolor:'rgba(255,255,255,.06)'},yaxis:{title:'лв',gridcolor:'rgba(255,255,255,.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.15},font:{color:'#e9f0ff'}},{displayModeBar:false});
-
-  const rows=[['Приход (лв)',fmtBGN(r.totalCashA),fmtBGN(r.totalCashB)],['Activations',fmtNum(Math.round(r.totalActsA)),fmtNum(Math.round(r.totalActsB))],['Foregone (лв)',fmtBGN(r.foregoneA),fmtBGN(r.foregoneB)],['Net (лв)',fmtBGN(r.totalCashA-r.foregoneA),fmtBGN(r.totalCashB-r.foregoneB)]];
-  let html='<table><thead><tr><th>Метрика</th><th>Scenario A</th><th>Scenario B</th></tr></thead><tbody>';
+  Plotly.react('chartRevenue',[traceA,traceB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'Revenue (лв)',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
+  
+  // Promo chart
+  const bar1={x:['A','B'],y:[r.foregoneA,r.foregoneB],name:'Foregone',type:'bar',marker:{color:'rgba(122,162,255,0.55)'}};
+  const bar2={x:['A','B'],y:[r.totalCashA,r.totalCashB],name:'Actual',type:'bar',marker:{color:'rgba(94,234,212,0.55)'}};
+  Plotly.react('chartPromo',[bar1,bar2],{barmode:'group',paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'лв',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
+  
+  // Compare table
+  const rows=[['Revenue (лв)',fmtBGN(r.totalCashA),fmtBGN(r.totalCashB)],['Activations',fmtNum(Math.round(r.totalActsA)),fmtNum(Math.round(r.totalActsB))],['Foregone (лв)',fmtBGN(r.foregoneA),fmtBGN(r.foregoneB)],['Net (лв)',fmtBGN(r.totalCashA-r.foregoneA),fmtBGN(r.totalCashB-r.foregoneB)]];
+  let html='<table><thead><tr><th>Metric</th><th>Scenario A</th><th>Scenario B</th></tr></thead><tbody>';
   rows.forEach(r=>html+='<tr><td>'+r[0]+'</td><td class="num">'+r[1]+'</td><td class="num">'+r[2]+'</td></tr>');
   html+='</tbody></table>';
-  els.tableWrap.innerHTML=html;
-
-  // Tab 4: Metrics chart
-  const traceActA={x:r.months,y:r.cashTotalA.map((v,i)=>i===0?v:r.cashTotalA[i]-r.cashTotalA[i-1]),type:'scatter',mode:'lines+markers',name:'Rev A',line:{color:'#7aa2ff',width:2}};
-  const traceActB={x:r.months,y:r.cashTotalB.map((v,i)=>i===0?v:r.cashTotalB[i]-r.cashTotalB[i-1]),type:'scatter',mode:'lines+markers',name:'Rev B',line:{color:'#5eead4',width:2}};
-  Plotly.react('chartMetrics',[traceActA,traceActB],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',margin:{l:50,r:20,t:30,b:40},xaxis:{title:'Месец',gridcolor:'rgba(255,255,255,.06)'},yaxis:{title:'Приход (лв)',gridcolor:'rgba(255,255,255,.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.15},font:{color:'#e9f0ff'}},{displayModeBar:false});
-
-  // Tab 5: NEW - Monthly Profit Table
-  // Calculate monthly profit: (Activation Revenue + Subscription Revenue) - no costs modeled yet
-  const monthlyProfitA = r.cashTotalA.map((v,i)=>i===0?v:r.cashTotalA[i]-r.cashTotalA[i-1]);
-  const monthlyProfitB = r.cashTotalB.map((v,i)=>i===0?v:r.cashTotalB[i]-r.cashTotalB[i-1]);
-  const cumulativeA = r.cumA;
-  const cumulativeB = r.cumB;
-  const activeBaseA = r.activeA;
-  const activeBaseB = r.activeB;
+  $('tableWrap').innerHTML=html;
   
-  // Take rate (simplified: new SIMs / base)
-  const takeRateA = newA.map(s=>p.pen*(1-p.ratioB)*100);
-  const takeRateB = newB.map(s=>p.pen*p.ratioB*100);
+  // Metrics chart (monthly revenue diff)
+  const revA=r.cashTotalA.map((v,i)=>i===0?v:r.cashTotalA[i]-r.cashTotalA[i-1]);
+  const revB=r.cashTotalB.map((v,i)=>i===0?v:r.cashTotalB[i]-r.cashTotalB[i-1]);
+  const traceMA={x:r.months,y:revA,type:'scatter',mode:'lines+markers',name:'Rev A',line:{color:'#7aa2ff',width:2}};
+  const traceMB={x:r.months,y:revB,type:'scatter',mode:'lines+markers',name:'Rev B',line:{color:'#5eead4',width:2}};
+  Plotly.react('chartMetrics',[traceMA,traceMB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'лв',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
   
-  // Monthly profit chart
+  // Monthly profit table
+  const monthlyProfitA=revA;
+  const monthlyProfitB=revB;
+  const cumulativeA=r.cumA;
+  const cumulativeB=r.cumB;
+  const activeBaseA=r.activeA;
+  const activeBaseB=r.activeB;
+  const takeRateA=newA.map(s=>(s/p.base*100).toFixed(2));
+  const takeRateB=newB.map(s=>(s/p.base*100).toFixed(2));
+  
+  // Monthly chart
   const traceProfitA={x:r.months,y:monthlyProfitA,type:'scatter',mode:'lines+markers',name:'Profit A',line:{color:'#7aa2ff',width:2}};
   const traceProfitB={x:r.months,y:monthlyProfitB,type:'scatter',mode:'lines+markers',name:'Profit B',line:{color:'#5eead4',width:2}};
-  Plotly.react('chartMonthly',[traceProfitA,traceProfitB],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',margin:{l:50,r:20,t:30,b:40},xaxis:{title:'Месец',gridcolor:'rgba(255,255,255,.06)'},yaxis:{title:'Печалба (лв)',gridcolor:'rgba(255,255,255,.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.15},font:{color:'#e9f0ff'}},{displayModeBar:false});
-
-  // Monthly profit table
-  let mHtml='<table><thead><tr><th>Метрика</th>';
+  Plotly.react('chartMonthly',[traceProfitA,traceProfitB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'Profit (лв)',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
+  
+  let mHtml='<table><thead><tr><th>Metric</th>';
   for(let i=1;i<=12;i++)mHtml+='<th>'+i+'</th>';
   mHtml+='</tr></thead><tbody>';
-  
-  // Consumer base (active)
   mHtml+='<tr><td><b>Active Base A</b></td>';
   activeBaseA.forEach(v=>mHtml+='<td class="num">'+fmtNum(Math.round(v))+'</td>');
   mHtml+='</tr><tr><td><b>Active Base B</b></td>';
   activeBaseB.forEach(v=>mHtml+='<td class="num">'+fmtNum(Math.round(v))+'</td>');
-  mHtml+='</tr>';
-  
-  // Take rate
-  mHtml+='<tr><td>Take Rate A (%)</td>';
-  takeRateA.forEach(v=>mHtml+='<td class="num">'+v.toFixed(2)+'</td>');
+  mHtml+='</tr><tr><td>Take Rate A (%)</td>';
+  takeRateA.forEach(v=>mHtml+='<td class="num">'+v+'</td>');
   mHtml+='</tr><tr><td>Take Rate B (%)</td>';
-  takeRateB.forEach(v=>mHtml+='<td class="num">'+v.toFixed(2)+'</td>');
-  mHtml+='</tr>';
-  
-  // Churn
-  mHtml+='<tr><td>Churn (%)</td>';
+  takeRateB.forEach(v=>mHtml+='<td class="num">'+v+'</td>');
+  mHtml+='</tr><tr><td>Churn (%)</td>';
   r.months.forEach(()=>mHtml+='<td class="num">'+(p.churn*100).toFixed(1)+'</td>');
-  mHtml+='</tr>';
-  
-  // Cumulative
-  mHtml+='<tr><td><b>Cumulative A</b></td>';
+  mHtml+='</tr><tr><td><b>Cumulative A</b></td>';
   cumulativeA.forEach(v=>mHtml+='<td class="num">'+fmtBGN(v)+'</td>');
   mHtml+='</tr><tr><td><b>Cumulative B</b></td>';
   cumulativeB.forEach(v=>mHtml+='<td class="num">'+fmtBGN(v)+'</td>');
-  mHtml+='</tr>';
-  
-  // Monthly Profit
-  mHtml+='<tr><td><b>Monthly Profit A</b></td>';
+  mHtml+='</tr><tr><td><b>Monthly Profit A</b></td>';
   monthlyProfitA.forEach(v=>mHtml+='<td class="num">'+fmtBGN(v)+'</td>');
   mHtml+='</tr><tr><td><b>Monthly Profit B</b></td>';
   monthlyProfitB.forEach(v=>mHtml+='<td class="num">'+fmtBGN(v)+'</td>');
-  mHtml+='</tr>';
+  mHtml+='</tr></tbody></table>';
+  $('monthlyProfitTable').innerHTML=mHtml;
   
-  mHtml+='</tbody></table>';
-  document.getElementById('monthlyProfitTable').innerHTML=mHtml;
-
   // Quick outputs
   const adopters=p.base*(p.pen/100);
-  els.quickOutputs.innerHTML='<div>Target adopters: <span class="mono">'+fmtNum(adopters)+'</span></div><div>Total SIMs: <span class="mono">'+fmtNum(adopters*p.avgDevices)+'</span></div><div>Per month: <span class="mono">'+fmtNum(adopters*p.avgDevices/12)+'</span></div>';
+  $('quickOutputs').innerHTML='<div>Target adopters: <span class="mono">'+fmtNum(adopters)+'</span></div><div>Total SIMs: <span class="mono">'+fmtNum(adopters*p.avgDevices)+'</span></div>';
 }
 
-function update(){const p=params();refresh();const r=simulate(p);render(r,p);}
+function update(){const p=params();refreshLabels(p);const r=simulate(p);render(r,p);}
 
-document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');const id=t.dataset.tab;document.querySelectorAll('.tabpane').forEach(p=>p.style.display='none');document.getElementById(id).style.display='block';window.dispatchEvent(new Event('resize'));});});
-['input','change'].forEach(ev=>{els.base.addEventListener(ev,update);els.mf.addEventListener(ev,update);els.af.addEventListener(ev,update);els.devices.addEventListener(ev,update);els.pen.addEventListener(ev,update);els.ratioB.addEventListener(ev,update);els.churn.addEventListener(ev,update);});
+// Tab switching
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const num=t.dataset.tab;
+    document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
+    $('pane'+num).classList.add('active');
+    window.dispatchEvent(new Event('resize'));
+  });
+});
+
+// Input listeners
+['base','mf','af','devices','pen','ratioB','churn'].forEach(id=>{
+  $(id).addEventListener('input',update);
+  $(id).addEventListener('change',update);
+});
+
 update();
 </script>
 </body>
