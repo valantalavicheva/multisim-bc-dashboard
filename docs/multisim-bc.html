@@ -202,7 +202,40 @@ function render(r,p){
   Plotly.react('chartMetrics',[traceMA,traceMB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'лв',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
   
   // Monthly profit table
+  var takeRate = (p.pen * 100).toFixed(2);
+  var churnPct = (p.churn * 100).toFixed(1);
+  var totalSIMs = p.base * p.pen * p.avgDevices;
+  var actRevA = p.af * p.avgDevices * p.pen / 12;
+  var actRevB = 0;
   
+  var mHtml = '<table><thead><tr><th>Metric</th>';
+  for(var i = 1; i <= 12; i++) mHtml += '<th>' + i + '</th>';
+  mHtml += '</tr></thead><tbody>';
+  mHtml += '<tr><td><b>Take Rate (%)</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + takeRate + '</td>'; });
+  mHtml += '</tr><tr><td><b>Churn (%)</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + churnPct + '</td>'; });
+  mHtml += '</tr><tr><td>Active Base</td>';
+  r.activeA.forEach(function(v) { mHtml += '<td class="num">' + fmtNum(Math.round(v)) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Rev Activation A</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(actRevA) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Rev Activation B</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(actRevB) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Rev Subscription A</b></td>';
+  r.cashSubA.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Rev Subscription B</b></td>';
+  r.cashSubB.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Monthly Profit A</b></td>';
+  r.cashTotalA.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Monthly Profit B</b></td>';
+  r.cashTotalB.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Cumulative A</b></td>';
+  r.cumA.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Cumulative B</b></td>';
+  r.cumB.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
+  mHtml += '</tr></tbody></table>';
+  $('monthlyProfitTable').innerHTML = mHtml;
+
   // Quick outputs
   const adopters=p.base*(p.pen/100);
   $('quickOutputs').innerHTML='<div>Target adopters: <span class="mono">'+fmtNum(adopters)+'</span></div><div>Total SIMs: <span class="mono">'+fmtNum(adopters*p.avgDevices)+'</span></div>';
