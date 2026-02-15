@@ -118,23 +118,19 @@ function simulate(p){
   const m=12,base=p.base,mf=p.mf,af=p.af,avgD=p.avgDevices,pen=p.pen/100,churn=p.churn/100;
   const totalAdopters=base*pen,totalSIMs=totalAdopters*avgD,newSIMsPerMonth=totalSIMs/m;
   let cohorts=[];
-  let cumA=0,cumB=0;
-  const res={months:Array.from({length:m},(_,i)=>i+1),newA,newB,activeA:[],activeB:[],cashSubA:[],cashSubB:[],cashTotalA:[],cashTotalB:[],cumA:[],cumB:[]};
+  let cum=0;
+  const res={months:Array.from({length:m},(_,i)=>i+1),active:[],cashTotal:[],cum:[]};
   for(let i=0;i<m;i++){
-    cohortsA.push({size:newA[i],free:1});cohortsB.push({size:newB[i],free:3});
+    cohorts.push({size:newSIMsPerMonth});
     const cf=1-churn;
-    cohortsA=cohortsA.map(c=>({size:c.size*cf,free:c.free}));
-    cohortsB=cohortsB.map(c=>({size:c.size*cf,free:c.free}));
-    let subA=0,subB=0;
-    cohortsA=cohortsA.map(c=>{if(c.free<=0)subA+=c.size*mf;return{...c,free:c.free-1}});
-    cohortsB=cohortsB.map(c=>{if(c.free<=0)subB+=c.size*mf;return{...c,free:c.free-1}});
-    const actA=newA[i]*af,actB=0;
-    const totA=actA+subA,totB=actB+subB;
-    cumA+=totA;cumB+=totB;
-    res.activeA.push(cohortsA.reduce((s,c)=>s+c.size,0));
-    res.activeB.push(cohortsB.reduce((s,c)=>s+c.size,0));
-    res.cashSubA.push(subA);res.cashSubB.push(subB);res.cashTotalA.push(totA);res.cashTotalB.push(totB);
-    res.cumA.push(cumA);res.cumB.push(cumB);
+    cohorts=cohorts.map(c=>({size:c.size*cf}));
+    let sub=cohorts.reduce((s,c)=>s+(c.size*mf),0);
+    let act=newSIMsPerMonth*af;
+    let tot=act+sub;
+    cum+=tot;
+    res.active.push(cohorts.reduce((s,c)=>s+c.size,0));
+    res.cashTotal.push(tot);
+    res.cum.push(cum);
   }
   res.totalCash=res.cashTotal.reduce((a,b)=>a+b,0);
   res.totalActs=totalSIMs;
