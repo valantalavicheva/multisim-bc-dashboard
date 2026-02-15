@@ -201,12 +201,14 @@ function render(r,p){
   const traceMB={x:r.months,y:revB,type:'scatter',mode:'lines+markers',name:'Rev B',line:{color:'#5eead4',width:2}};
   Plotly.react('chartMetrics',[traceMA,traceMB],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:50,r:20,t:20,b:40},xaxis:{title:'Month',gridcolor:'rgba(255,255,255,0.06)'},yaxis:{title:'лв',gridcolor:'rgba(255,255,255,0.06)',tickformat:','},legend:{orientation:'h',x:0,y:1.1},font:{color:'#e9f0ff'}},{displayModeBar:false});
   
-  // Monthly profit table
+  // Monthly profit table - single scenario
   var takeRate = (p.pen * 100).toFixed(2);
   var churnPct = (p.churn * 100).toFixed(1);
   var totalSIMs = p.base * p.pen * p.avgDevices;
-  var actRevA = p.af * p.avgDevices * p.pen / 12;
-  var actRevB = 0;
+  var monthlySIMs = totalSIMs / 12;
+  var revActivation = p.af * monthlySIMs;
+  var revSubscription = p.mf * totalSIMs * 0.5; // assume 50% on average
+  var monthlyProfit = revActivation + revSubscription;
   
   var mHtml = '<table><thead><tr><th>Metric</th>';
   for(var i = 1; i <= 12; i++) mHtml += '<th>' + i + '</th>';
@@ -217,22 +219,14 @@ function render(r,p){
   r.months.forEach(function() { mHtml += '<td class="num">' + churnPct + '</td>'; });
   mHtml += '</tr><tr><td>Active Base</td>';
   r.activeA.forEach(function(v) { mHtml += '<td class="num">' + fmtNum(Math.round(v)) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Rev Activation A</b></td>';
-  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(actRevA) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Rev Activation B</b></td>';
-  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(actRevB) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Rev Subscription A</b></td>';
-  r.cashSubA.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Rev Subscription B</b></td>';
-  r.cashSubB.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Monthly Profit A</b></td>';
-  r.cashTotalA.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Monthly Profit B</b></td>';
-  r.cashTotalB.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Cumulative A</b></td>';
-  r.cumA.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
-  mHtml += '</tr><tr><td><b>Cumulative B</b></td>';
-  r.cumB.forEach(function(v) { mHtml += '<td class="num">' + fmtBGN(v) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Rev Activation</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(revActivation) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Rev Subscription</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(revSubscription) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Total Monthly Profit</b></td>';
+  r.months.forEach(function() { mHtml += '<td class="num">' + fmtBGN(monthlyProfit) + '</td>'; });
+  mHtml += '</tr><tr><td><b>Cumulative</b></td>';
+  r.cumA.forEach(function(v, i) { mHtml += '<td class="num">' + fmtBGN(v + r.cumB[i]) + '</td>'; });
   mHtml += '</tr></tbody></table>';
   $('monthlyProfitTable').innerHTML = mHtml;
 
