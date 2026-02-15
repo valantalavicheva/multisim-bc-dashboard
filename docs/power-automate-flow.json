@@ -1,0 +1,215 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {},
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "Manual",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "base": {
+              "type": "integer",
+              "title": "Consumer Base",
+              "description": "Total consumer base (e.g., 1500000)"
+            },
+            "penetration": {
+              "type": "number",
+              "title": "Penetration %",
+              "description": "Target penetration rate (e.g., 0.1)"
+            },
+            "monthlyFee": {
+              "type": "number",
+              "title": "Monthly Fee (BGN)",
+              "description": "Monthly subscription fee"
+            },
+            "activationFee": {
+              "type": "number",
+              "title": "Activation Fee (BGN)",
+              "description": "One-time activation fee"
+            },
+            "avgDevices": {
+              "type": "number",
+              "title": "Avg Devices per User",
+              "description": "Average SIMs per adopter (e.g., 1.2)"
+            },
+            "scenarioBRatio": {
+              "type": "number",
+              "title": "Scenario B Ratio %",
+              "description": "Percentage of activations with device (e.g., 35)"
+            },
+            "churnRate": {
+              "type": "number",
+              "title": "Monthly Churn %",
+              "description": "Monthly churn rate (e.g., 2.0)"
+            }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Initialize_Variables": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "totalAdopters",
+            "type": "float",
+            "value": "@triggerBody()?['base']"
+          },
+          {
+            "name": "totalSIMs",
+            "type": "float",
+            "value": "@variables('totalAdopters')"
+          },
+          {
+            "name": "monthlyNewSIMs",
+            "type": "float",
+            "value": "@divide(variables('totalSIMs'), 12)"
+          },
+          {
+            "name": "scenarioA_SIMs",
+            "type": "float",
+            "value": "@multiply(variables('monthlyNewSIMs'), 0.65)"
+          },
+          {
+            "name": "scenarioB_SIMs",
+            "type": "float",
+            "value": "@multiply(variables('monthlyNewSIMs'), 0.35)"
+          }
+        ]
+      }
+    },
+    "Calculate_Revenue_A": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "scenarioA_ActivationRevenue",
+            "type": "float",
+            "value": "@multiply(variables('scenarioA_SIMs'), triggerBody()?['activationFee'])"
+          },
+          {
+            "name": "scenarioA_SubscriptionRevenue",
+            "type": "float",
+            "value": "@multiply(variables('scenarioA_SIMs'), 11, triggerBody()?['monthlyFee'])"
+          },
+          {
+            "name": "scenarioA_TotalRevenue",
+            "type": "float",
+            "value": "@add(variables('scenarioA_ActivationRevenue'), variables('scenarioA_SubscriptionRevenue'))"
+          }
+        ]
+      }
+    },
+    "Calculate_Revenue_B": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "scenarioB_ActivationRevenue",
+            "type": "float",
+            "value": "@multiply(variables('scenarioB_SIMs'), 0)"
+          },
+          {
+            "name": "scenarioB_SubscriptionRevenue",
+            "type": "float",
+            "value": "@multiply(variables('scenarioB_SIMs'), 9, triggerBody()?['monthlyFee'])"
+          },
+          {
+            "name": "scenarioB_TotalRevenue",
+            "type": "float",
+            "value": "@add(variables('scenarioB_ActivationRevenue'), variables('scenarioB_SubscriptionRevenue'))"
+          }
+        ]
+      }
+    },
+    "Calculate_Foregone": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "foregoneA",
+            "type": "float",
+            "value": "@multiply(variables('scenarioA_SIMs'), triggerBody()?['monthlyFee'])"
+          },
+          {
+            "name": "foregoneB",
+            "type": "float",
+            "value": "@add(multiply(variables('scenarioB_SIMs'), multiply(3, triggerBody()?['monthlyFee'])), multiply(variables('scenarioB_SIMs'), triggerBody()?['activationFee']))"
+          }
+        ]
+      }
+    },
+    "Calculate_Net": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "netA",
+            "type": "float",
+            "value": "@subtract(variables('scenarioA_TotalRevenue'), variables('foregoneA'))"
+          },
+          {
+            "name": "netB",
+            "type": "float",
+            "value": "@subtract(variables('scenarioB_TotalRevenue'), variables('foregoneB'))"
+          }
+        ]
+      }
+    },
+    "Create_SharePoint_Item": {
+      "type": "Scope",
+      "actions": {
+        "HTTP_Request_to_SharePoint": {
+          "type": "Http",
+          "inputs": {
+            "uri": "https://yettelbg.sharepoint.com/sites/Marketing/_api/web/lists/getbytitle('BusinessCaseResults')/items",
+            "method": "POST",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer @{outputs('Get_SharePoint_Token')?['access_token']}"
+            },
+            "body": {
+              "Title": "MultiSIM Business Case",
+              "Base": "@triggerBody()?['base']",
+              "Penetration": "@triggerBody()?['penetration']",
+              "ScenarioA_Revenue": "@variables('scenarioA_TotalRevenue')",
+              "ScenarioB_Revenue": "@variables('scenarioB_TotalRevenue')",
+              "ScenarioA_Net": "@variables('netA')",
+              "ScenarioB_Net": "@variables('netB')",
+              "ForegoneA": "@variables('foregoneA')",
+              "ForegoneB": "@variables('foregoneB')"
+            }
+          }
+        }
+      }
+    },
+    "Send_Email": {
+      "type": "Email",
+      "inputs": {
+        "to": "v.al.antalavicheva@yettel.bg",
+        "subject": "MultiSIM Business Case Results",
+        "body": "<h2>MultiSIM Business Case Calculation</h2><p><b>Scenario A (Standard Promo):</b> @{variables('scenarioA_TotalRevenue')} BGN</p><p><b>Scenario B (Device Focused):</b> @{variables('scenarioB_TotalRevenue')} BGN</p><p><b>Net Revenue A:</b> @{variables('netA')} BGN</p><p><b>Net Revenue B:</b> @{variables('netB')} BGN</p>"
+      }
+    },
+    "Response": {
+      "type": "Response",
+      "inputs": {
+        "statusCode": 200,
+        "body": {
+          "ScenarioA_Revenue": "@variables('scenarioA_TotalRevenue')",
+          "ScenarioB_Revenue": "@variables('scenarioB_TotalRevenue')",
+          "NetA": "@variables('netA')",
+          "NetB": "@variables('netB')",
+          "ForegoneA": "@variables('foregoneA')",
+          "ForegoneB": "@variables('foregoneB')"
+        }
+      }
+    }
+  },
+  "outputs": {}
+}
